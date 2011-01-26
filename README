@@ -1,0 +1,12 @@
+Interactive OpenGL console
+==========================
+
+This app lets you enter OpenGL commands and evaluate them with a single key or button press. You can walk across your scene, see coordinate grid if you like, export the resulting image.
+
+TODO:
+ * beter error recovery from errors between glBegin and glEnd
+ * draw coordinate grid
+ * move through the scene
+ * tabs
+ * revamp UI: more buttons or no buttons, refresh by F5, proper initial size
+ * // comments, highlighting them
