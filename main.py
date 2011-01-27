@@ -9,20 +9,24 @@ import ui_main
 
 
 class MainWindow(QtGui.QMainWindow, ui_main.Ui_MainWindow):
+    hint = 'Press F5 to update scene, use arrows to look around'
+    
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setupUi(self)
         self.glwidget = GLWidget(self.eval_source, self.verticalLayoutWidget)
         self.glwidget.setObjectName("glwidget")
         self.verticalLayout.addWidget(self.glwidget)
-        self.connect(self.runButton, QtCore.SIGNAL('clicked()'), self.update_scene)
         self.textEdit.setPlainText(SAMPLE_SCENE)
         self.scene_source = None
         self.eval_globals = dict(gl.__dict__)
         self.eval_globals.update(glu.__dict__)
         self.eval_globals['grid'] = self.glwidget.draw_grid
         del self.eval_globals['glLoadIdentity'] # do not allow
-
+        self.statusbar.showMessage(self.hint)
+        self.update_scene()
+        self.glwidget.parent().resize(self.size().width() / 2, self.size().height())
+        
     def update_scene(self):
         self.scene_source = unicode(self.textEdit.toPlainText())
         self.glwidget.update()
@@ -52,13 +56,21 @@ class MainWindow(QtGui.QMainWindow, ui_main.Ui_MainWindow):
                     in_glBegin = True
             self.textEdit.setHtml('<br/>'.join(lines))
             if success:
-                self.statusbar.showMessage('')
+                self.statusbar.showMessage(self.hint)
     
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_F5:
+            self.update_scene()
+
 
 class GLWidget(QtOpenGL.QGLWidget):
+    angle_shift = 0.5
+    
     def __init__(self, eval_source, parent):
         self.eval_source = eval_source
         super(GLWidget, self).__init__(parent = parent)
+        self.angle_up = 0
+        self.angle_right = 0
     
     def initializeGL(self):
         gl.glShadeModel(gl.GL_SMOOTH)
@@ -77,6 +89,34 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
+
+    def mousePressEvent(self, event):
+        self.setFocus()
+
+    def keyPressEvent(self, event):
+        {QtCore.Qt.Key_Up: self.on_key_up,
+         QtCore.Qt.Key_Down: self.on_key_down,
+         QtCore.Qt.Key_Left: self.on_key_left,
+         QtCore.Qt.Key_Right: self.on_key_right}.get(event.key(), lambda: None)()
+        self.update()
+
+    def on_key_up(self):
+        self.angle_up += self.angle_shift
+
+    def on_key_down(self):
+        self.angle_up -= self.angle_shift
+
+    def on_key_left(self):
+        self.angle_right += self.angle_shift
+
+    def on_key_right(self):
+        self.angle_right -= self.angle_shift
+
+    def paintGL(self):
+        self.clear_scene()
+        gl.glRotate(self.angle_up, -1, 0, 0)
+        gl.glRotate(self.angle_right, 0, -1, 0)
+        self.eval_source()
 
     def clear_scene(self):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -103,10 +143,6 @@ class GLWidget(QtOpenGL.QGLWidget):
         gl.glVertex3f(0,-grid_size, 0)
         gl.glVertex3f(0, grid_size, 0)
         gl.glEnd()
-    
-    def paintGL(self):
-        self.clear_scene()
-        self.eval_source()
         
 
 SAMPLE_SCENE = '''glTranslatef(-1.5, -1.0, -6.0)
