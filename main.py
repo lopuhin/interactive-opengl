@@ -29,16 +29,25 @@ class MainWindow(QtGui.QMainWindow, ui_main.Ui_MainWindow):
         if self.scene_source:
             lines = self.scene_source.split('\n')
             success = True
+            in_glBegin = False
             for n, line in enumerate(lines):
                 if not line: continue
+                eval_line = line.strip().strip(';')
                 try:
-                    eval(line.strip(';'), self.eval_globals)
+                    eval(eval_line, self.eval_globals)
                 except (NameError, SyntaxError) as e:
                     error = unicode(e).replace('(<string>, line 1)', '')
                     self.statusbar.showMessage(error)
                     lines[n] = u'<font title="%s" color="red">%s</font>' % (error, line)
+                    if in_glBegin:
+                        gl.glEnd()
+                        self.glwidget.clearScene()
                     success = False
                     break
+                if eval_line == 'glEnd()':
+                    in_glBegin = False
+                if eval_line.startswith('glBegin('):
+                    in_glBegin = True
             self.textEdit.setHtml('<br/>'.join(lines))
             if success:
                 self.statusbar.showMessage('')
@@ -66,10 +75,13 @@ class GLWidget(QtOpenGL.QGLWidget):
 
         gl.glMatrixMode(gl.GL_MODELVIEW)
         gl.glLoadIdentity()
-    
-    def paintGL(self):
+
+    def clearScene(self):
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glLoadIdentity()
+    
+    def paintGL(self):
+        self.clearScene()
         self.eval_source()
 
 
