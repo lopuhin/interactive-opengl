@@ -1,10 +1,9 @@
 Interactive OpenGL console
 ==========================
 
-This app lets you enter OpenGL commands and evaluate them with a single key or button press. You can walk across your scene, see coordinate grid if you like, export the resulting image.
+This app lets you enter OpenGL commands and evaluate them with a single key or button press. You can walk across your scene, draw current coordinate grid if you like, export the resulting image.
 
 TODO:
- * draw coordinate grid
  * move through the scene
  * tabs
  * revamp UI: more buttons or no buttons, refresh by F5, proper initial size
